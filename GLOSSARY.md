@@ -1,4 +1,4 @@
-# excited
+# trajectonomics
 
 A command line for managing personal resources, money first. It records what actually happened, derives a starting point from it, and projects the future under stated assumptions.
 

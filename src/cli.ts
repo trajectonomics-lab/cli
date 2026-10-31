@@ -28,7 +28,7 @@ function usage(): string {
 	const lines = Object.entries(commands).map(
 		([name, command]) => `  ${name.padEnd(width)}  ${command.summary}`,
 	)
-	return ["Usage: excited <command> [options]", "", "Commands:", ...lines].join("\n")
+	return ["Usage: trajectonomics <command> [options]", "", "Commands:", ...lines].join("\n")
 }
 
 // strict: false means unknown flags are accepted and ignored instead of throwing.

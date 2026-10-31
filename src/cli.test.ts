@@ -13,7 +13,7 @@ describe("cli", () => {
 	it("prints usage with no arguments", async () => {
 		const res = await capture([])
 		expect(res.code).toBe(0)
-		expect(res.out).toContain("Usage: excited")
+		expect(res.out).toContain("Usage: trajectonomics")
 	})
 
 	it("prints the version for --version and the version command", async () => {

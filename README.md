@@ -1,12 +1,12 @@
-# excited
+# trajectonomics
 
-The excited.live command line. Bun only.
+The trajectonomics command line. Bun only.
 
 ```bash
 bun install
 bun run dev -- --help     # run from source
 bun test
-bun run build             # single-file binary at dist/excited
+bun run build             # single-file binary at dist/trajectonomics
 bun run lint              # Biome, zero warnings
 bun run format            # Biome format + import order, writes files
 bun run check             # lint + typecheck + test + build, what CI runs
