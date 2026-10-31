@@ -12,6 +12,12 @@ bun run format            # Biome format + import order, writes files
 bun run check             # lint + typecheck + test + build, what CI runs
 ```
 
+## Docs
+
+- [`GLOSSARY.md`](GLOSSARY.md): the project's vocabulary.
+- [`docs/adr/`](docs/adr/): design decisions and why.
+- [`ROADMAP.md`](ROADMAP.md): phases and recorded next steps.
+
 ## Adding a command
 
 Add an entry to `commands` in `src/cli.ts` (move it to `src/commands/<name>.ts`
