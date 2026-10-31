@@ -24,7 +24,7 @@ Push/sync to a server and web; time management.
 
 ## Next steps, recorded but not scheduled
 
-- **Multi-currency.** Unlocks when tax-core supports a non-THB jurisdiction. FX rates enter as explicit dated input and are never fetched. sim-core must handle multi-currency accounts, and the ledger gains conversion postings.
+- **Multi-currency.** Unlock conditions: tax-core supports a non-THB jurisdiction; FX rates enter as explicit dated input and are never fetched; sim-core handles multi-currency accounts; the ledger gains conversion postings.
 - **Real separate entities** (for example a company), using the reserved `entity` field.
 - **MCP server**, once the command contract is stable.
 - **HTML report** for human viewing.
