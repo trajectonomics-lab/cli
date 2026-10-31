@@ -1,13 +1,13 @@
 {
-	"name": "@excited-live/cli",
+	"name": "@trajectonomics-lab/cli",
 	"version": "0.0.0",
 	"private": true,
-	"description": "excited.live command line",
+	"description": "trajectonomics command line",
 	"license": "MIT",
 	"type": "module",
 	"packageManager": "bun@1.4.4",
 	"bin": {
-		"excited": "./src/index.ts"
+		"traj": "./src/index.ts"
 	},
 	"scripts": {
 		"dev": "bun run src/index.ts",
@@ -15,7 +15,7 @@
 		"typecheck": "tsc --noEmit",
 		"lint": "biome ci --error-on-warnings .",
 		"format": "biome check --write .",
-		"build": "bun build src/index.ts --compile --outfile dist/excited",
+		"build": "bun build src/index.ts --compile --outfile dist/traj",
 		"check": "bun run lint && bun run typecheck && bun test && bun run build",
 		"update:skills": "bunx skills@latest update -p -y"
 	},
