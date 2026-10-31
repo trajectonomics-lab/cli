@@ -20,15 +20,23 @@ const version: Command = {
 	},
 }
 
+const help: Command = {
+	summary: "Show usage",
+	run: (_args, io) => {
+		io.out(usage())
+		return 0
+	},
+}
+
 // Add a command here: one entry, one file under src/commands/ when it grows.
-const commands: Record<string, Command> = { version }
+const commands: Record<string, Command> = { help, version }
 
 function usage(): string {
 	const width = Math.max(...Object.keys(commands).map((name) => name.length))
 	const lines = Object.entries(commands).map(
 		([name, command]) => `  ${name.padEnd(width)}  ${command.summary}`,
 	)
-	return ["Usage: trajectonomics <command> [options]", "", "Commands:", ...lines].join("\n")
+	return ["Usage: traj <command> [options]", "", "Commands:", ...lines].join("\n")
 }
 
 // strict: false means unknown flags are accepted and ignored instead of throwing.

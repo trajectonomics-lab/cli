@@ -13,7 +13,13 @@ describe("cli", () => {
 	it("prints usage with no arguments", async () => {
 		const res = await capture([])
 		expect(res.code).toBe(0)
-		expect(res.out).toContain("Usage: trajectonomics")
+		expect(res.out).toContain("Usage: traj")
+	})
+
+	it("prints usage for the help command", async () => {
+		const res = await capture(["help"])
+		expect(res.code).toBe(0)
+		expect(res.out).toContain("Usage: traj")
 	})
 
 	it("prints the version for --version and the version command", async () => {

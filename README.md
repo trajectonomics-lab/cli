@@ -6,7 +6,7 @@ The trajectonomics command line. Bun only.
 bun install
 bun run dev -- --help     # run from source
 bun test
-bun run build             # single-file binary at dist/trajectonomics
+bun run build             # single-file binary at dist/traj
 bun run lint              # Biome, zero warnings
 bun run format            # Biome format + import order, writes files
 bun run check             # lint + typecheck + test + build, what CI runs
