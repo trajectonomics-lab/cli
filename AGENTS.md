@@ -32,4 +32,4 @@ Skills come from [`mattpocock/skills`](https://github.com/mattpocock/skills) and
 
 - Update: `npx skills update -p -y`
 - Reinstall: `npx skills add mattpocock/skills --skill '*' -a claude-code codex opencode antigravity-cli pi -y`
-- Restore from the lock: `npx skills experimental_install`
+- Restore from the lock: `npx skills experimental_install`, then recreate the Claude Code symlinks with the reinstall command above. The lock does not record target agents, so restore writes `.agents/skills/` only and leaves `.claude/skills/` empty.
