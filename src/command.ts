@@ -56,3 +56,8 @@ export function defineCommand<I extends z.ZodType, O extends z.ZodType>(
 ): AnyCommand {
 	return command as unknown as AnyCommand
 }
+
+/** Commands in a stable order, so every listing is deterministic. */
+export function sortedByName(commands: readonly AnyCommand[]): AnyCommand[] {
+	return [...commands].sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))
+}

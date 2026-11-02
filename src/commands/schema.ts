@@ -1,6 +1,6 @@
 import { z } from "zod"
 import type { AnyCommand } from "../command"
-import { defineCommand, ok } from "../command"
+import { defineCommand, ok, sortedByName } from "../command"
 import { type ErrorCode, fail, registry } from "../errors"
 
 const jsonSchema = z.record(z.string(), z.unknown())
@@ -25,10 +25,6 @@ const detail = z.strictObject({
 	errorCodes: z.array(z.string()).describe("Registry codes this command raises."),
 })
 
-function byName<T extends { name: string }>(items: readonly T[]): T[] {
-	return [...items].sort((a, b) => (a.name < b.name ? -1 : 1))
-}
-
 export const schema: AnyCommand = defineCommand({
 	name: "schema",
 	summary: "Describe the commands and the error registry",
@@ -43,7 +39,7 @@ export const schema: AnyCommand = defineCommand({
 	],
 	errorCodes: ["unknown_command"],
 	run: (input, ctx) => {
-		const commands = byName(ctx.commands)
+		const commands = sortedByName(ctx.commands)
 		if (input.command === undefined) {
 			const codes = (Object.keys(registry) as ErrorCode[]).sort()
 			return ok({

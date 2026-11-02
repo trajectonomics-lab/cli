@@ -1,6 +1,6 @@
 import { z } from "zod"
 import type { AnyCommand } from "../command"
-import { defineCommand, ok } from "../command"
+import { defineCommand, ok, sortedByName } from "../command"
 
 export const help: AnyCommand = defineCommand({
 	name: "help",
@@ -11,7 +11,7 @@ export const help: AnyCommand = defineCommand({
 	examples: [{ command: "traj help", description: "Show usage." }],
 	errorCodes: [],
 	run: (_input, ctx) => {
-		const sorted = [...ctx.commands].sort((a, b) => (a.name < b.name ? -1 : 1))
+		const sorted = sortedByName(ctx.commands)
 		const width = Math.max(...sorted.map((command) => command.name.length))
 		const lines = sorted.map((command) => `  ${command.name.padEnd(width)}  ${command.summary}`)
 		return ok(

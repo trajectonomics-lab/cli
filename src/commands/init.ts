@@ -1,16 +1,10 @@
 import { Database } from "bun:sqlite"
 import { existsSync, mkdirSync } from "node:fs"
-import { homedir } from "node:os"
 import { join } from "node:path"
 import { z } from "zod"
-import type { AnyCommand, Env } from "../command"
+import type { AnyCommand } from "../command"
 import { defineCommand, ok } from "../command"
-
-/** `TRAJ_HOME` if set, otherwise `~/.traj`, resolved through `os.homedir()` on every platform. */
-export function dataDirectory(env: Env): string {
-	const override = env["TRAJ_HOME"]
-	return override ? override : join(homedir(), ".traj")
-}
+import { dataDirectory } from "../data-directory"
 
 export const init: AnyCommand = defineCommand({
 	name: "init",
@@ -32,12 +26,11 @@ export const init: AnyCommand = defineCommand({
 		const database = join(directory, "traj.db")
 		const created = !existsSync(database)
 		mkdirSync(directory, { recursive: true })
-		if (created) {
-			// No tables yet: the schema belongs to a later change. `user_version` stays 0.
-			const db = new Database(database, { create: true })
-			db.run("PRAGMA journal_mode = WAL")
-			db.close()
-		}
+		// No tables yet: the schema belongs to a later change. `user_version` stays 0. Setting WAL
+		// on a database that already has it is a no-op, so a half-finished earlier run is repaired.
+		const db = new Database(database, { create: true })
+		db.run("PRAGMA journal_mode = WAL")
+		db.close()
 		return ok({ directory, database, created })
 	},
 })

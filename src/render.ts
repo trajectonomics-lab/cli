@@ -61,7 +61,7 @@ export function renderResult(data: unknown, format: Format): string {
 	return renderHumanLines(data, "").join("\n")
 }
 
-/** Renders a failure: the JSON envelope in JSON mode, otherwise text. */
+/** Renders a failure: the JSON envelope when the Format is json, otherwise text. */
 export function renderError(error: AppError, format: Format): string {
 	const { body } = error
 	if (format === "json") return JSON.stringify({ error: body })

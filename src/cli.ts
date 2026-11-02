@@ -78,8 +78,11 @@ async function dispatch(argv: string[], env: Env): Promise<{ data: unknown } | A
 
 	// --version and --help are checked before any command name is looked up.
 	const [commandName, ...rest] = positionals
-	const name = values.version ? "version" : !commandName || values.help ? "help" : commandName
-	const args = values.version || !commandName || values.help ? [] : rest
+	const [name, args] = values.version
+		? ["version", []]
+		: !commandName || values.help
+			? ["help", []]
+			: [commandName, rest]
 
 	const command = commands.find((candidate) => candidate.name === name)
 	if (!command) {
@@ -121,7 +124,7 @@ export async function run(argv: string[], io: Io, env: Env): Promise<number> {
 		io.out(renderResult(outcome.data, choice.format))
 		return 0
 	} catch (error) {
-		// The payload is fixed text; diagnostics go to stderr only when TRAJ_DEBUG asks for them.
+		// The message is fixed text; diagnostics go to stderr only when TRAJ_DEBUG asks for them.
 		if (env["TRAJ_DEBUG"] === "1") {
 			io.err(error instanceof Error ? (error.stack ?? error.message) : String(error))
 		}
