@@ -20,10 +20,13 @@ bun run check             # lint + typecheck + test + build, what CI runs
 
 ## Adding a command
 
-Create `src/commands/<name>.ts` with `defineCommand`: a summary, an input schema,
-an output schema, examples, the error codes it raises, and a `run` that returns
-`ok(data)` or `fail(code)`. Register it in `commands` in `src/cli.ts`. A new
-failure is a new entry in the registry in `src/errors.ts` with its exit class.
-Commands never format output or exit; `traj schema` describes them from the same
-schemas that validate them. Test through `run(argv, io, env)` in
-`src/cli.test.ts`, which needs no process.
+Create `src/commands/<name>.ts` (or `src/commands/<group>/<name>.ts` for a
+nested one) with `defineCommand`: a summary, an input schema, an output schema,
+examples, the error codes it raises, and a `run` that returns `ok(data)` or
+`fail(code)`. Register it in `src/commands/index.ts`, inside a `defineGroup` if
+it is nested. Fields of the input schema that are not positionals become flags
+automatically (`fromDate` is `--from-date`). A new failure is a new entry in the
+registry in `src/errors.ts` with its exit class. Commands never format output or
+exit; `traj help <path>` and `traj schema <path>` are generated from the same
+schemas that validate them. Test through `run(argv, io, env)`, which needs no
+process. See ADR 0015.

@@ -1,45 +1,57 @@
-import type { AnyCommand, Env } from "./command"
-import { help } from "./commands/help"
-import { init } from "./commands/init"
-import { schema } from "./commands/schema"
-import { version } from "./commands/version"
+import type { Env, Group, Leaf } from "./command"
+import { root as defaultRoot } from "./commands"
 import { type AppError, fail, isAppError } from "./errors"
-import { HELP_HINT, parseFlags, parseInput } from "./parse"
+import { parseInput } from "./input"
+import { parseNodeArgs } from "./parse"
 import { type Format, renderError, renderResult, resolveFormat } from "./render"
+import { findNode, unknownCommand, walk } from "./tree"
 
 export interface Io {
 	out: (line: string) => void
 	err: (line: string) => void
 }
 
-// Add a command here: one entry, one file under src/commands/.
-const commands: readonly AnyCommand[] = [help, init, schema, version]
+type Invocation = { leaf: Leaf; input: unknown }
 
-async function dispatch(argv: string[], env: Env): Promise<{ data: unknown } | AppError> {
-	const parsed = parseFlags(argv)
-	if (isAppError(parsed)) return parsed
-	const { values, positionals } = parsed
+function builtIn(root: Group, name: string, input: unknown): Invocation | AppError {
+	const leaf = findNode(root, [name])
+	if (leaf?.kind !== "leaf") return fail("internal")
+	return { leaf, input }
+}
 
-	// --version and --help are checked before any command name is looked up.
-	const [commandName, ...rest] = positionals
-	const [name, args] = values.version
-		? ["version", []]
-		: !commandName || values.help
-			? ["help", []]
-			: [commandName, rest]
-
-	const command = commands.find((candidate) => candidate.name === name)
-	if (!command) {
-		return fail("unknown_command", { message: `Unknown command: ${name}`, hint: HELP_HINT })
+/** Decides what to run: `--version` and `--help` win, a bare group falls back to its usage. */
+function route(argv: string[], root: Group): Invocation | AppError {
+	// --version is answered before any command word is looked up, as it always was.
+	if (argv.some((token) => token === "--version" || token === "-v")) {
+		return builtIn(root, "version", {})
 	}
-	const input = parseInput(command, args)
-	if (isAppError(input)) return input
+	const landed = walk(root, argv)
+	if (isAppError(landed)) return landed
+	const { node, path, rest } = landed
+	const parsed = parseNodeArgs(node.kind === "leaf" ? node.flags : [], rest)
+	if (isAppError(parsed)) return parsed
+	if (node.kind === "group") {
+		// Only words after a bare `--` can still be left over under a group.
+		const stray = parsed.positionals[0]
+		return stray === undefined ? builtIn(root, "help", { path }) : unknownCommand(path, stray)
+	}
+	if (parsed.help) return builtIn(root, "help", { path })
+	const input = parseInput(node, parsed, path)
+	return isAppError(input) ? input : { leaf: node, input: input.input }
+}
 
-	const result = await command.run(input.input, { env, commands })
+async function dispatch(
+	argv: string[],
+	env: Env,
+	root: Group,
+): Promise<{ data: unknown } | AppError> {
+	const invocation = route(argv, root)
+	if (isAppError(invocation)) return invocation
+	const result = await invocation.leaf.run(invocation.input, { env, root })
 	if (isAppError(result)) return result
 	// A result that breaks its own output schema is a programming error: it throws, and the
 	// top-level catch turns it into the fixed `internal` envelope.
-	return { data: command.output.parse(result.data) }
+	return { data: invocation.leaf.output.parse(result.data) }
 }
 
 function failureOf(error: AppError, format: Format, io: Io): number {
@@ -47,23 +59,27 @@ function failureOf(error: AppError, format: Format, io: Io): number {
 	return error.body.exitCode
 }
 
+function badFormat(requested: string, io: Io): number {
+	const error = fail("unknown_format", {
+		message: `Unknown format: ${requested}`,
+		hint: "Set TRAJ_FORMAT to human or json, or pass --json.",
+	})
+	return failureOf(error, "human", io)
+}
+
 /** Runs the CLI and returns the exit code. Never calls process.exit, so tests can drive it. */
-export async function run(argv: string[], io: Io, env: Env): Promise<number> {
+export async function run(
+	argv: string[],
+	io: Io,
+	env: Env,
+	root: Group = defaultRoot,
+): Promise<number> {
 	// The format is settled first, by a pre-scan that cannot fail, so even a malformed command
 	// line is answered in the format the caller asked for.
 	const choice = resolveFormat(argv, env)
 	try {
-		if (choice.invalid !== undefined) {
-			return failureOf(
-				fail("unknown_format", {
-					message: `Unknown format: ${choice.invalid}`,
-					hint: "Set TRAJ_FORMAT to human or json, or pass --json.",
-				}),
-				"human",
-				io,
-			)
-		}
-		const outcome = await dispatch(argv, env)
+		if (choice.invalid !== undefined) return badFormat(choice.invalid, io)
+		const outcome = await dispatch(argv, env, root)
 		if (isAppError(outcome)) return failureOf(outcome, choice.format, io)
 		io.out(renderResult(outcome.data, choice.format))
 		return 0

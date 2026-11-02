@@ -1,9 +1,9 @@
 import { z } from "zod"
 import pkg from "../../package.json"
-import type { AnyCommand } from "../command"
+import type { Leaf } from "../command"
 import { defineCommand, ok } from "../command"
 
-export const version: AnyCommand = defineCommand({
+export const version: Leaf = defineCommand({
 	name: "version",
 	summary: "Print the CLI version",
 	positionals: [],
