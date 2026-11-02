@@ -20,7 +20,10 @@ bun run check             # lint + typecheck + test + build, what CI runs
 
 ## Adding a command
 
-Add an entry to `commands` in `src/cli.ts` (move it to `src/commands/<name>.ts`
-once it grows) and a test in `src/cli.test.ts`. `run()` takes argv and an `Io`
-and returns an exit code, so every command is testable without spawning a
-process.
+Create `src/commands/<name>.ts` with `defineCommand`: a summary, an input schema,
+an output schema, examples, the error codes it raises, and a `run` that returns
+`ok(data)` or `fail(code)`. Register it in `commands` in `src/cli.ts`. A new
+failure is a new entry in the registry in `src/errors.ts` with its exit class.
+Commands never format output or exit; `traj schema` describes them from the same
+schemas that validate them. Test through `run(argv, io, env)` in
+`src/cli.test.ts`, which needs no process.
