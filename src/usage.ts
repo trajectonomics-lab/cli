@@ -1,5 +1,6 @@
+import type { z } from "zod"
 import type { Group, Leaf, Node } from "./command"
-import type { FlagSpec } from "./flags"
+import { type FlagSpec, isVariadic } from "./flags"
 import { sortedByName } from "./tree"
 
 function table(rows: readonly (readonly [string, string])[]): string[] {
@@ -12,9 +13,16 @@ function flagLabel(spec: FlagSpec): string {
 }
 
 function flagNote(spec: FlagSpec): string {
-	const notes = [spec.description, spec.multiple ? "repeatable" : undefined]
+	const notes = [spec.description?.replace(/\.$/, ""), spec.multiple ? "repeatable" : undefined]
 	if (spec.required) notes.push("required")
 	return notes.filter(Boolean).join("; ")
+}
+
+/** `<word>` when required, `[word]` when optional, `[word...]` when it takes the rest. */
+function positionalLabel(leaf: Leaf, name: string): string {
+	const field = leaf.input.shape[name] as z.ZodType
+	const dots = isVariadic(leaf.input, name) ? "..." : ""
+	return field.safeParse(undefined).success ? `[${name}${dots}]` : `<${name}${dots}>`
 }
 
 const GLOBAL_OPTIONS: readonly (readonly [string, string])[] = [
@@ -45,7 +53,7 @@ function groupUsage(group: Group, path: readonly string[]): string {
 }
 
 function leafUsage(leaf: Leaf, path: readonly string[]): string {
-	const words = leaf.positionals.map((name) => `<${name}>`)
+	const words = leaf.positionals.map((name) => positionalLabel(leaf, name))
 	const flags = leaf.flags.length > 0 ? ["[options]"] : []
 	const own = leaf.flags.map((spec) => [flagLabel(spec), flagNote(spec)] as const)
 	const examples = leaf.examples.map((example) => [example.command, example.description] as const)

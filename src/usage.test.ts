@@ -20,7 +20,7 @@ describe("usage", () => {
 			expect(res.code).toBe(0)
 			expect(res.out).toContain("Usage: traj demo echo [options] <word>")
 			expect(res.out).toContain("--times <number>")
-			expect(res.out).toContain("How many times.")
+			expect(res.out).toContain("How many times")
 			expect(res.out).toContain("--tag <string>")
 			expect(res.out).toContain("repeatable")
 			expect(res.out).toContain("--from-date <string>")

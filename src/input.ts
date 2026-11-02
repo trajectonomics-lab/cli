@@ -17,11 +17,17 @@ function fillPositionals(
 			hint: `Run "traj help ${path.join(" ")}" to see its input.`,
 		})
 	}
+	return assign(leaf, words, variadic)
+}
+
+function assign(leaf: Leaf, words: readonly string[], variadic: boolean): Record<string, unknown> {
 	const fields: Record<string, unknown> = {}
+	const lastIndex = leaf.positionals.length - 1
 	for (const [index, name] of leaf.positionals.entries()) {
-		const rest = variadic && name === last
-		const value = rest ? words.slice(index) : words[index]
-		if (value !== undefined && value.length > 0) fields[name] = value
+		const value = variadic && index === lastIndex ? words.slice(index) : words[index]
+		// An empty list means "not given", so a schema default can apply.
+		const given = Array.isArray(value) ? value.length > 0 : value !== undefined
+		if (given) fields[name] = value
 	}
 	return fields
 }

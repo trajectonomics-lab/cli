@@ -39,27 +39,36 @@ function kindOf(field: string, type: z.ZodType): FlagKind {
 	throw new Error(`Input field "${field}" has type "${kind}", which cannot be a flag.`)
 }
 
+function flagOf(field: string, schema: z.ZodType, taken: Set<string>): FlagSpec {
+	const { core, description } = unwrap(schema)
+	const multiple = core.def.type === "array"
+	const element = multiple ? (core.def as unknown as { element: z.ZodType }).element : core
+	const flag = toKebab(field)
+	if (RESERVED_FLAGS.includes(flag)) {
+		throw new Error(`Input field "${field}" collides with the global --${flag} flag.`)
+	}
+	if (taken.has(flag)) throw new Error(`Two input fields map to the same flag --${flag}.`)
+	taken.add(flag)
+	return {
+		field,
+		flag,
+		kind: kindOf(field, unwrap(element).core),
+		multiple,
+		required: !schema.safeParse(undefined).success,
+		description,
+	}
+}
+
 /** Derives the flags of an input schema: every field that is not a positional. */
 export function deriveFlags(input: z.ZodObject, positionals: readonly string[]): FlagSpec[] {
+	const catchall = input.def.catchall as z.ZodType | undefined
+	if (catchall?.def.type !== "never") {
+		throw new Error("A command input must be a strict object, so unknown fields are rejected.")
+	}
+	const taken = new Set<string>()
 	return Object.entries(input.shape)
 		.filter(([field]) => !positionals.includes(field))
-		.map(([field, schema]) => {
-			const { core, description } = unwrap(schema as z.ZodType)
-			const multiple = core.def.type === "array"
-			const element = multiple ? (core.def as unknown as { element: z.ZodType }).element : core
-			const flag = toKebab(field)
-			if (RESERVED_FLAGS.includes(flag)) {
-				throw new Error(`Input field "${field}" collides with the global --${flag} flag.`)
-			}
-			return {
-				field,
-				flag,
-				kind: kindOf(field, unwrap(element).core),
-				multiple,
-				required: !(schema as z.ZodType).safeParse(undefined).success,
-				description,
-			}
-		})
+		.map(([field, schema]) => flagOf(field, schema as z.ZodType, taken))
 }
 
 /** True when a positional field is an array: it takes every remaining word. */
@@ -68,14 +77,24 @@ export function isVariadic(input: z.ZodObject, name: string): boolean {
 	return field !== undefined && unwrap(field).core.def.type === "array"
 }
 
-/** Fails at definition time if a positional is not a field, or a variadic one is not last. */
+function checkPositional(input: z.ZodObject, name: string, isLast: boolean): void {
+	const field = input.shape[name] as z.ZodType | undefined
+	if (!field) throw new Error(`Positional "${name}" is not a field of the input schema.`)
+	const { core } = unwrap(field)
+	const element =
+		core.def.type === "array" ? (core.def as unknown as { element: z.ZodType }).element : core
+	if (unwrap(element).core.def.type !== "string") {
+		throw new Error(`Positional "${name}" must be a string or an array of strings.`)
+	}
+	if (isVariadic(input, name) && !isLast)
+		throw new Error(`Variadic positional "${name}" must be last.`)
+}
+
+/** Fails at definition time if a positional is not a usable field. */
 export function checkPositionals(input: z.ZodObject, positionals: readonly string[]): void {
+	const repeated = positionals.find((name, index) => positionals.indexOf(name) !== index)
+	if (repeated) throw new Error(`Positional "${repeated}" is listed twice.`)
 	positionals.forEach((name, index) => {
-		if (!(name in input.shape)) {
-			throw new Error(`Positional "${name}" is not a field of the input schema.`)
-		}
-		if (isVariadic(input, name) && index !== positionals.length - 1) {
-			throw new Error(`Variadic positional "${name}" must be last.`)
-		}
+		checkPositional(input, name, index === positionals.length - 1)
 	})
 }

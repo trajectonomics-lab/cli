@@ -46,6 +46,47 @@ describe("registration is checked when a command is defined", () => {
 		).toThrow("last")
 	})
 
+	it("rejects a positional that is not a string, since only flags are coerced", () => {
+		expect(() =>
+			defineCommand({
+				...base,
+				positionals: ["count"],
+				input: z.strictObject({ count: z.number() }),
+			}),
+		).toThrow('"count"')
+	})
+
+	it("rejects two fields that map to the same flag", () => {
+		expect(() =>
+			defineCommand({
+				...base,
+				input: z.strictObject({
+					fromDate: z.string().optional(),
+					"from-date": z.string().optional(),
+				}),
+			}),
+		).toThrow("--from-date")
+	})
+
+	it("rejects a repeated positional", () => {
+		expect(() =>
+			defineCommand({
+				...base,
+				positionals: ["a", "a"],
+				input: z.strictObject({ a: z.string() }),
+			}),
+		).toThrow('"a"')
+	})
+
+	it("rejects an input schema that is not strict", () => {
+		expect(() => defineCommand({ ...base, input: z.object({}) })).toThrow("strict")
+	})
+
+	it("rejects a child name that could never be reached", () => {
+		const leaf = defineCommand({ ...base, name: "-x", input: z.strictObject({}) })
+		expect(() => defineGroup({ name: "g", summary: "g", children: [leaf] })).toThrow('"-x"')
+	})
+
 	it("rejects two children with the same name in a group", () => {
 		const leaf = defineCommand({ ...base, input: z.strictObject({}) })
 		expect(() => defineGroup({ name: "g", summary: "g", children: [leaf, leaf] })).toThrow('"x"')

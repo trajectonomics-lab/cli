@@ -11,7 +11,7 @@ const echo = defineCommand({
 		word: z.string().describe("The word to echo."),
 		upper: z.boolean().optional().describe("Shout it."),
 		times: z.number().int().optional().describe("How many times."),
-		tag: z.array(z.string()).optional().describe("A label, repeatable."),
+		tag: z.array(z.string()).optional().describe("A label."),
 		fromDate: z.string().optional(),
 	}),
 	output: z.strictObject({

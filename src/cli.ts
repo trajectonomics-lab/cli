@@ -21,15 +21,12 @@ function builtIn(root: Group, name: string, input: unknown): Invocation | AppErr
 
 /** Decides what to run: `--version` and `--help` win, a bare group falls back to its usage. */
 function route(argv: string[], root: Group): Invocation | AppError {
-	// --version is answered before any command word is looked up, as it always was.
-	if (argv.some((token) => token === "--version" || token === "-v")) {
-		return builtIn(root, "version", {})
-	}
 	const landed = walk(root, argv)
 	if (isAppError(landed)) return landed
 	const { node, path, rest } = landed
-	const parsed = parseNodeArgs(node.kind === "leaf" ? node.flags : [], rest)
+	const parsed = parseNodeArgs(node.kind === "leaf" ? node.flags : [], rest, path)
 	if (isAppError(parsed)) return parsed
+	if (parsed.version) return builtIn(root, "version", {})
 	if (node.kind === "group") {
 		// Only words after a bare `--` can still be left over under a group.
 		const stray = parsed.positionals[0]

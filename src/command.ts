@@ -74,6 +74,8 @@ export function defineCommand<I extends z.ZodObject, O extends z.ZodType>(
 
 export function defineGroup(group: Omit<Group, "kind">): Group {
 	const names = group.children.map((child) => child.name)
+	const hidden = names.find((name) => name.startsWith("-") || name === "")
+	if (hidden !== undefined) throw new Error(`Child name "${hidden}" could never be reached.`)
 	const duplicate = names.find((name, index) => names.indexOf(name) !== index)
 	if (duplicate) throw new Error(`Group "${group.name}" has two children named "${duplicate}".`)
 	return { kind: "group", ...group }

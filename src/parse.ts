@@ -1,7 +1,6 @@
 import { parseArgs } from "node:util"
 import { type AppError, fail } from "./errors"
 import type { FlagSpec } from "./flags"
-import { HELP_HINT } from "./tree"
 
 export type Parsed = {
 	json: boolean
@@ -25,24 +24,34 @@ function optionsFor(flags: readonly FlagSpec[]) {
 	} as const
 }
 
+// Plain decimal spellings only: no hex, exponent, Infinity or surrounding spaces.
+const PLAIN_NUMBER = /^-?\d+(\.\d+)?$/
+
 function toFieldValue(spec: FlagSpec, value: unknown): unknown {
 	if (spec.kind !== "number") return value
 	const asNumber = (text: unknown) =>
-		typeof text === "string" && text.trim() !== "" ? Number(text) : Number.NaN
+		typeof text === "string" && PLAIN_NUMBER.test(text) ? Number(text) : Number.NaN
 	return Array.isArray(value) ? value.map(asNumber) : asNumber(value)
 }
 
-function failureOf(error: unknown): AppError {
+function failureOf(error: unknown, path: readonly string[]): AppError {
 	const message = error instanceof Error ? error.message : ""
+	const hint = `Run "traj help${path.map((word) => ` ${word}`).join("")}" to see its flags.`
 	const unknown = /^Unknown option '([^']+)'/.exec(message)
-	if (unknown) {
-		return fail("unknown_flag", { message: `Unknown flag: ${unknown[1]}`, hint: HELP_HINT })
-	}
-	return fail("invalid_input", { message: message.split(". ")[0] ?? message, hint: HELP_HINT })
+	if (unknown) return fail("unknown_flag", { message: `Unknown flag: ${unknown[1]}`, hint })
+	// parseArgs words these errors in its own way; we name the flag and say what is wrong.
+	const named = /^Option '(-[^' ]+)/.exec(message)
+	const flag = named?.[1] ?? "a flag"
+	const detail = message.includes("does not take an argument") ? "takes no value" : "needs a value"
+	return fail("invalid_input", { message: `Flag ${flag} ${detail}.`, hint })
 }
 
 /** Strictly parses a node's arguments: the global flags plus the leaf's own flags. */
-export function parseNodeArgs(flags: readonly FlagSpec[], rest: string[]): Parsed | AppError {
+export function parseNodeArgs(
+	flags: readonly FlagSpec[],
+	rest: string[],
+	path: readonly string[],
+): Parsed | AppError {
 	try {
 		const { values, positionals } = parseArgs({
 			args: rest,
@@ -63,6 +72,6 @@ export function parseNodeArgs(flags: readonly FlagSpec[], rest: string[]): Parse
 			fields,
 		}
 	} catch (error) {
-		return failureOf(error)
+		return failureOf(error, path)
 	}
 }
