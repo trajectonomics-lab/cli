@@ -93,3 +93,25 @@ _Avoid_: End date, lifespan
 **Core**:
 A separate, pure package of real-world logic (ledger, simulation, or tax) that knows nothing about this application.
 _Avoid_: Library, plugin
+
+### Contract
+
+**Exit code**:
+The coarse class of a finished run: 0 ok, 1 unexpected, 2 invalid input, 3 domain rejection, 4 not found, 5 conflict.
+_Avoid_: Status, return code
+
+**Error code**:
+The stable string name of one failure, belonging to exactly one exit code. Many error codes share one exit code; one error code never spans two.
+_Avoid_: Error id, reason, cause
+
+**Format**:
+How a command renders its result, `human` or `json`, chosen explicitly by flag or environment and never inferred from a terminal.
+_Avoid_: Mode, output type
+
+**Result**:
+What a command returns when it succeeds, shaped by that command's output schema.
+_Avoid_: Output, response, payload
+
+**Data directory**:
+The single directory holding all state, `~/.traj` unless `TRAJ_HOME` says otherwise.
+_Avoid_: Home, config dir, state dir
