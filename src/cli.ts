@@ -1,10 +1,10 @@
-import { parseArgs } from "node:util"
 import type { AnyCommand, Env } from "./command"
 import { help } from "./commands/help"
 import { init } from "./commands/init"
 import { schema } from "./commands/schema"
 import { version } from "./commands/version"
-import { type AppError, fail, isAppError, registry } from "./errors"
+import { type AppError, fail, isAppError } from "./errors"
+import { HELP_HINT, parseFlags, parseInput } from "./parse"
 import { type Format, renderError, renderResult, resolveFormat } from "./render"
 
 export interface Io {
@@ -14,62 +14,6 @@ export interface Io {
 
 // Add a command here: one entry, one file under src/commands/.
 const commands: readonly AnyCommand[] = [help, init, schema, version]
-
-const HELP_HINT = 'Run "traj help" to list commands.'
-
-type Parsed = {
-	values: { json?: boolean; help?: boolean; version?: boolean }
-	positionals: string[]
-}
-
-function parseFlags(argv: string[]): Parsed | AppError {
-	try {
-		return parseArgs({
-			args: argv,
-			options: {
-				json: { type: "boolean" },
-				help: { type: "boolean", short: "h" },
-				version: { type: "boolean", short: "v" },
-			},
-			allowPositionals: true,
-			strict: true,
-		})
-	} catch (error) {
-		const message = error instanceof Error ? error.message : ""
-		const unknown = /^Unknown option '([^']+)'/.exec(message)
-		if (unknown) {
-			return fail("unknown_flag", { message: `Unknown flag: ${unknown[1]}`, hint: HELP_HINT })
-		}
-		return fail("invalid_input", { message: message.split(". ")[0] ?? message, hint: HELP_HINT })
-	}
-}
-
-/** Fills a command's input from positionals and validates it against the command's schema. */
-function parseInput(command: AnyCommand, positionals: string[]): { input: unknown } | AppError {
-	if (positionals.length > command.positionals.length) {
-		return fail("invalid_input", {
-			message: `Unexpected argument: ${positionals[command.positionals.length]}`,
-			hint: `Run "traj schema ${command.name}" to see its input.`,
-		})
-	}
-	const raw: Record<string, string> = {}
-	command.positionals.forEach((name, index) => {
-		const value = positionals[index]
-		if (value !== undefined) raw[name] = value
-	})
-	const parsed = command.input.safeParse(raw)
-	if (parsed.success) return { input: parsed.data }
-	const issues = parsed.error.issues.map((issue) => ({
-		path: issue.path.join("."),
-		message: issue.message,
-	}))
-	const first = issues[0]
-	return fail("invalid_input", {
-		message: first?.message ?? registry.invalid_input.message,
-		...(first?.path ? { path: first.path } : {}),
-		details: issues,
-	})
-}
 
 async function dispatch(argv: string[], env: Env): Promise<{ data: unknown } | AppError> {
 	const parsed = parseFlags(argv)
