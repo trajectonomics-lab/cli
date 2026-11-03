@@ -1,5 +1,5 @@
 {
-	"name": "@trajectonomics-lab/cli",
+	"name": "@trajectonomics/cli",
 	"version": "0.0.0",
 	"private": true,
 	"description": "trajectonomics command line",
