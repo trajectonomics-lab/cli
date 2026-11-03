@@ -104,6 +104,18 @@ _Avoid_: Status, return code
 The stable string name of one failure, belonging to exactly one exit code. Many error codes share one exit code; one error code never spans two.
 _Avoid_: Error id, reason, cause
 
+**Command**:
+One runnable entry of the CLI, such as `tx add`, reached by a path of words. It validates its input, returns a Result and never formats or exits.
+_Avoid_: Subcommand, action, verb
+
+**Group**:
+A command path prefix, such as `tx`, that only holds commands. A bare group prints its usage.
+_Avoid_: Namespace, category
+
+**Flag**:
+A named option of a command, derived from a field of its input schema that is not a positional.
+_Avoid_: Option, switch
+
 **Format**:
 How a command renders its result, `human` or `json`, chosen explicitly by flag or environment and never inferred from a terminal.
 _Avoid_: Mode, output type

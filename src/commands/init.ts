@@ -2,11 +2,11 @@ import { Database } from "bun:sqlite"
 import { existsSync, mkdirSync } from "node:fs"
 import { join } from "node:path"
 import { z } from "zod"
-import type { AnyCommand } from "../command"
+import type { Leaf } from "../command"
 import { defineCommand, ok } from "../command"
 import { dataDirectory } from "../data-directory"
 
-export const init: AnyCommand = defineCommand({
+export const init: Leaf = defineCommand({
 	name: "init",
 	summary: "Create the data directory and an empty database",
 	positionals: [],
